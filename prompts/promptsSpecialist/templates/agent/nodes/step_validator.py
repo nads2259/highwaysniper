@@ -3,5 +3,5 @@
 from ..graph.state import AgentState
 
 
-def step_validator(state: AgentState) -> dict:
+async def step_validator(state: AgentState) -> dict:
     return {}

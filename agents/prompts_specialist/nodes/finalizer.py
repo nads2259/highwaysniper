@@ -3,5 +3,5 @@
 from ..graph.state import AgentState
 
 
-def finalizer(state: AgentState) -> dict:
+async def finalizer(state: AgentState) -> dict:
     return {}

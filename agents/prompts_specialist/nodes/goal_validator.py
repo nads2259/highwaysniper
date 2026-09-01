@@ -3,5 +3,5 @@
 from ..graph.state import AgentState
 
 
-def goal_validator(state: AgentState) -> dict:
+async def goal_validator(state: AgentState) -> dict:
     return {}

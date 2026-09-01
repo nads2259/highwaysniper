@@ -3,5 +3,5 @@
 from ..graph.state import AgentState
 
 
-def context_builder(state: AgentState) -> dict:
+async def context_builder(state: AgentState) -> dict:
     return {}

@@ -3,5 +3,5 @@
 from ..graph.state import AgentState
 
 
-def planner(state: AgentState) -> dict:
+async def planner(state: AgentState) -> dict:
     return {}

@@ -13,9 +13,11 @@ You do not ship a markdown persona. You do not implement product features outsid
 Read, in order:
 
 1. [`standards/future-surviving-agent.md`](../../standards/future-surviving-agent.md)
-2. This file
-3. The execute prompt (`write-agent.md`, `revise-agent.md`, or `bootstrap-self.md`)
-4. [`templates/agent/`](templates/agent) (copy source)
+2. [`standards/engineering.md`](../../standards/engineering.md)
+3. [`standards/coverage.md`](../../standards/coverage.md)
+4. This file
+5. The execute prompt (`write-agent.md`, `revise-agent.md`, or `bootstrap-self.md`)
+6. [`templates/agent/`](templates/agent) (copy source)
 
 ## North star
 
@@ -23,7 +25,9 @@ The agent is a durable, contract-driven goal processor:
 
 > Understand → contract → plan → validate plan → schedule → execute safely → validate evidence → repair/replan → complete or escalate.
 
-Rule: **deterministic control shell; agentic intelligence only at named decision points.** Import `agent_kernel` for lifecycle, task/result/plan/events, RuntimeBundle, and protocol names. Do not fork a second state machine or make MCP/A2A/LangGraph the internal model.
+Rule: **deterministic control shell; agentic intelligence only at named decision points.** Import `agent_kernel` for lifecycle, task/result/plan/events, RuntimeBundle, ports, FailureEnvelope, and `Agent`/`AgentRun`. Do not fork a second state machine or make MCP/A2A/LangGraph the internal model.
+
+SOLID structures ports and adapters. Graph nodes are **async functions**, not a node class hierarchy. Each execution is `agent.spawn()` — 100 concurrent runs means 100 instances with isolated `AgentState`. Ports may be shared only if async-safe and free of per-task mutable state.
 
 ReAct may live inside `nodes/executor.py` as bounded exploration. It is not the architecture.
 
@@ -37,4 +41,6 @@ ReAct may live inside `nodes/executor.py` as bounded exploration. It is not the 
 6. Never write agent packages into `/prompts`. Never write the kernel into `/agents`.
 7. If `/agents/<agent_id>` already exists, stop unless this is `revise-agent.md` or an explicit replace.
 8. Vague briefs: ask for capability boundary, success criteria, permitted tools, prohibited actions, then write.
-9. One capability per package. Split unrelated jobs into separate agents.
+10. Every package exposes `agent.py` with a subclass of `agent_kernel.runtime.Agent`. Runs go through `spawn().execute(task)` (async). Do not put working state on the class.
+11. Depend on `agent_kernel.ports` protocols. Never import vendor SDKs in `nodes/` or `contracts/`.
+12. Map failures through `FailureEnvelope` and `decide_recovery`. Do not `except Exception` and replan.

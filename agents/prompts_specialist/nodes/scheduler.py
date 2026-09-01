@@ -3,5 +3,5 @@
 from ..graph.state import AgentState
 
 
-def scheduler(state: AgentState) -> dict:
+async def scheduler(state: AgentState) -> dict:
     return {}

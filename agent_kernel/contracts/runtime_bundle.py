@@ -22,3 +22,9 @@ class RuntimeBundle(BaseModel):
     capabilities: dict[str, str] = Field(default_factory=dict)
     policies: dict[str, str] = Field(default_factory=dict)
     dependencies: dict[str, str] = Field(default_factory=dict)
+    memory_profile: str | None = None
+    checkpoint_profile: str | None = None
+    sandbox_profile: str | None = None
+    tool_registry_version: int | None = None
+    container_digest: str | None = None
+    package_lock_hash: str | None = None

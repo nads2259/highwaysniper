@@ -3,5 +3,5 @@
 from ..graph.state import AgentState
 
 
-def executor(state: AgentState) -> dict:
+async def executor(state: AgentState) -> dict:
     return {}

@@ -6,7 +6,7 @@ from ..graph.lifecycle import checkpoint_after
 from ..graph.state import AgentState
 
 
-def goal_builder(state: AgentState) -> dict:
+async def goal_builder(state: AgentState) -> dict:
     assert state.task is not None
     if not state.task.goal.success_criteria:
         raise ValueError("goal.success_criteria is required")

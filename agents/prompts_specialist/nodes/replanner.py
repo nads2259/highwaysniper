@@ -6,7 +6,7 @@ from ..graph.lifecycle import checkpoint_after
 from ..graph.state import AgentState
 
 
-def replanner(state: AgentState) -> dict:
+async def replanner(state: AgentState) -> dict:
     if state.replan_count >= state.max_replans:
         return {"lifecycle": checkpoint_after(state.lifecycle, Lifecycle.GOAL_VALIDATION)}
     nxt = (

@@ -232,3 +232,13 @@ agents/<agent_id>/
 ```
 
 The specialist fills domain contracts, goal/acceptance, validators, policies, prompts, and capability ports. It imports the kernel; it does not fork a new lifecycle or invent a second task protocol.
+
+## 10. Instance model
+
+```python
+await AgentType(ports=...).spawn().execute(task)
+# 100 concurrent runs = 100 spawn() instances
+```
+
+Engineering rules (SOLID ports, functional nodes, typed failures): [`engineering.md`](engineering.md).  
+What is implemented vs still platform-owned: [`coverage.md`](coverage.md).

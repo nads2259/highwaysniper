@@ -15,7 +15,7 @@ agents/<agent_id>/
 1. Derive snake_case `agent_id`. Use the user’s name if they gave one.
 2. If `agents/<agent_id>/` exists, stop (use `revise-agent.md`).
 3. Copy `prompts/promptsSpecialist/templates/agent/` → `agents/<agent_id>/`.
-4. Replace placeholders. Fill `manifest.yaml` capability, goal-oriented README, domain `prompts/`, `validators/`, `policies/`, and `capabilities/ports`.
+4. Replace placeholders including `__AGENT_CLASS__`. Fill `manifest.yaml`, `agent.py` (subclass of `Agent`, `spawn()` per run), domain `prompts/`, `validators/`, `policies/`, and `capabilities/ports`. Nodes stay async functions.
 5. Keep kernel imports. Domain `contracts/` extend or alias kernel types; they do not redefine lifecycle.
 6. Planner output is a versioned DAG (`Plan`), not prose.
 7. Write the tree to disk. Do not only paste files in chat.
