@@ -1,0 +1,1 @@
+Validate the produced tree against standards/future-surviving-agent.md: required directories, manifest pins, AgentTaskContract/AgentResult usage, DAG planner, independent validators, RuntimeBundle defaults, no writes into /prompts or agent_kernel forks.

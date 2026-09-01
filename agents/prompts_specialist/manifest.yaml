@@ -1,0 +1,36 @@
+id: prompts_specialist
+version: 0.1.0
+title: Prompts specialist
+graph_version: 1
+task_contract_version: 1
+result_contract_version: 1
+
+capability:
+  id: agent_package_authoring
+  version: 0.1.0
+  summary: Write or revise a future-surviving agent package under agents/<agent_id>/
+  input_schema: AgentTaskContract
+  output_schema: AgentPackageAuthoringResultV1
+
+runtime_bundle_defaults:
+  models:
+    planner: planner-profile-v1
+    executor: executor-profile-v1
+    validator: validator-profile-v1
+  checkpoint_profile: durable-required
+  sandbox_profile: restricted
+
+evaluation_gates:
+  - contract
+  - capability
+  - golden_task
+  - grounding
+  - goal_completion
+  - adversarial
+  - recovery
+  - replay
+  - concurrency
+  - model_swap
+  - tool_swap
+  - cost
+  - drift
