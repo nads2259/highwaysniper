@@ -1,21 +1,16 @@
 # promptsSpecialist
 
-Prompts in this directory, when executed, **write an agent file into `/agents`**.
+Prompts here, when executed, write a **future-surviving agent package** into `/agents`.
 
-| Prompt | When to execute |
+| Prompt | Effect |
 | --- | --- |
-| [`write-agent.md`](write-agent.md) | Create a new agent at `agents/<agentName>.md` |
-| [`revise-agent.md`](revise-agent.md) | Overwrite an existing agent in `/agents` |
-| [`bootstrap-self.md`](bootstrap-self.md) | Write `agents/promptsSpecialist.md` from these prompts |
+| [`write-agent.md`](write-agent.md) | Create `agents/<agent_id>/` |
+| [`revise-agent.md`](revise-agent.md) | Update an existing package |
+| [`bootstrap-self.md`](bootstrap-self.md) | Write `agents/prompts_specialist/` |
 
-Load [`SYSTEM.md`](SYSTEM.md) first (system / developer message), then the prompt you want to run (user message), plus your brief.
+Load [`SYSTEM.md`](SYSTEM.md), then the execute prompt, plus the brief.
 
-## Output location
+Standard: [`standards/future-surviving-agent.md`](../../standards/future-surviving-agent.md)  
+Copy source: [`templates/agent/`](templates/agent)
 
-Always:
-
-```text
-agents/<agentName>.md
-```
-
-`<agentName>` is camelCase, matching this folder’s naming (`promptsSpecialist`).
+`agent_id` is snake_case. Do not emit `agents/<name>.md` personas.

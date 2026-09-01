@@ -1,24 +1,25 @@
-# Execute: write a new agent
+# Execute: write a new agent package
 
-You are running as **promptsSpecialist**. Follow [`SYSTEM.md`](SYSTEM.md). Use [`templates/agent.md`](templates/agent.md) as the skeleton.
+You are **promptsSpecialist**. Follow [`SYSTEM.md`](SYSTEM.md) and [`standards/future-surviving-agent.md`](../../standards/future-surviving-agent.md).
 
-## Your task
+## Task
 
-From the **user brief** in this message (or the next user message), create **one** new agent and write it to disk:
+From the user brief, create **one** agent package:
 
 ```text
-agents/<agentName>.md
+agents/<agent_id>/
 ```
 
 ## Steps
 
-1. Derive `agentName` (camelCase) from the brief. If the user supplied a name, use it.
-2. List existing files in `/agents`. If `agents/<agentName>.md` already exists, stop and tell the user to run `revise-agent.md` or pick another name.
-3. Fill every section of the template. Replace placeholders. Do not leave `TODO`, lorem, or empty YAML.
-4. Scope the agent to a single job. If the brief contains several jobs, either pick the primary job and note the rest as non-goals, or write only after the user chooses one.
-5. Give the agent a real output contract (files, PRs, review comments, etc.). “Be helpful” is not an output.
-6. **Write** `agents/<agentName>.md`. Creating `/agents` is allowed. Do not only print the agent in chat.
-7. Reply with the path written, the agent name, and a 3-line summary of what executing that agent will do.
+1. Derive snake_case `agent_id`. Use the user’s name if they gave one.
+2. If `agents/<agent_id>/` exists, stop (use `revise-agent.md`).
+3. Copy `prompts/promptsSpecialist/templates/agent/` → `agents/<agent_id>/`.
+4. Replace placeholders. Fill `manifest.yaml` capability, goal-oriented README, domain `prompts/`, `validators/`, `policies/`, and `capabilities/ports`.
+5. Keep kernel imports. Domain `contracts/` extend or alias kernel types; they do not redefine lifecycle.
+6. Planner output is a versioned DAG (`Plan`), not prose.
+7. Write the tree to disk. Do not only paste files in chat.
+8. Reply with `agents/<agent_id>/`, capability id, success criteria the package encodes, and any brief items you scoped out.
 
 ## User brief
 

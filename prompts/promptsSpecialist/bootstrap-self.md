@@ -1,33 +1,32 @@
-# Execute: write promptsSpecialist into /agents
+# Execute: write prompts_specialist into /agents
 
-You are running as **promptsSpecialist**. Follow [`SYSTEM.md`](SYSTEM.md) and [`templates/agent.md`](templates/agent.md).
+You are **promptsSpecialist**. Follow [`SYSTEM.md`](SYSTEM.md).
 
-## Your task
+## Task
 
-Materialize **this specialist** as an agent file in the agents root so later sessions can load one file instead of this prompt folder.
-
-**Write:**
+Materialize this specialist as a **package** (not a markdown file):
 
 ```text
-agents/promptsSpecialist.md
+agents/prompts_specialist/
 ```
 
-## What the agent must encode
+## Domain
 
-The file must stand alone. Collapse `SYSTEM.md`, `write-agent.md`, `revise-agent.md`, and the template contract into one agent definition.
+Capability: `agent_package_authoring`.
 
-It must instruct the loaded agent to:
+Goal: given a brief, write or revise a future-surviving agent package under `/agents` that conforms to `standards/future-surviving-agent.md` and `templates/agent/`.
 
-- Create new agents at `agents/<agentName>.md` (same rules as `write-agent.md`).
-- Revise existing agents in `/agents` (same rules as `revise-agent.md`).
-- Never write agent files into `/prompts`.
-- Use camelCase names matching `promptsSpecialist`.
-- Use the template sections: Identity, Scope, Inputs, Process, Outputs, Done when, Refusals, plus YAML `name`, `title`, `role`, `description`.
+Success criteria:
+
+- Output is `agents/<agent_id>/` with the required tree.
+- Kernel lifecycle and contracts are imported, not forked.
+- Manifest, RuntimeBundle defaults, independent validators, and test family dirs exist.
+- Markdown-only “persona agents” are rejected at intake.
 
 ## Steps
 
-1. Read every file in `prompts/promptsSpecialist/` including the template.
-2. Draft `agents/promptsSpecialist.md` so an LLM that sees only that file behaves as this specialist.
-3. If `agents/promptsSpecialist.md` already exists, overwrite it so it matches these prompts.
-4. **Write** the file. Do not only print it in chat.
-5. Reply with the path and confirm a later session can run from `agents/promptsSpecialist.md` alone.
+1. Copy the template to `agents/prompts_specialist/`.
+2. Fill domain prompts, policies (may not write into `/prompts` or fork kernel), and capability ports for filesystem authoring.
+3. Overwrite if the package already exists so it tracks these prompts.
+4. Delete any leftover `agents/promptsSpecialist.md`.
+5. Reply confirming later runs can load `agents/prompts_specialist/` as the specialist.

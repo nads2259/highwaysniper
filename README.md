@@ -1,10 +1,12 @@
 # highwaysniper
 
-## Layout
+Contract-driven agents: deterministic kernel, domain packages, specialist prompts that write those packages.
 
 ```text
-prompts/<specialistName>/   # executable prompts
-agents/                     # agents written by those prompts
+standards/          # future-surviving agent standard
+agent_kernel/       # canonical contracts, lifecycle, protocol names
+prompts/<name>/     # executable specialist prompts
+agents/<agent_id>/  # independently deployable agent packages
 ```
 
-Start with [`prompts/promptsSpecialist`](prompts/promptsSpecialist): load `SYSTEM.md`, then run `write-agent.md` (or `bootstrap-self.md`) so a new file appears in [`agents/`](agents).
+Create an agent by loading `prompts/promptsSpecialist/SYSTEM.md` then `write-agent.md` with a brief. Output is `agents/<agent_id>/`, not a single markdown file.

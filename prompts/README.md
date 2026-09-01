@@ -1,13 +1,5 @@
 # Prompts
 
-Specialist prompts live in **named subdirectories** under this folder:
+Specialists live in `prompts/<specialistName>/`.
 
-```text
-prompts/<specialistName>/
-```
-
-Example: `prompts/promptsSpecialist`.
-
-Each specialist directory contains the prompts you paste into (or load as) an agent session. Follow that specialist’s own README for inputs and for where it writes files.
-
-Generated agents are written to [`/agents`](../agents), not into this folder.
+[`promptsSpecialist`](promptsSpecialist) writes **agent packages** to [`/agents`](../agents), using [`standards/future-surviving-agent.md`](../standards/future-surviving-agent.md). Prompt folders stay here; generated agents do not.

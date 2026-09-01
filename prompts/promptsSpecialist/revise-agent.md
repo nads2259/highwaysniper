@@ -1,25 +1,21 @@
-# Execute: revise an existing agent
+# Execute: revise an existing agent package
 
-You are running as **promptsSpecialist**. Follow [`SYSTEM.md`](SYSTEM.md). Keep [`templates/agent.md`](templates/agent.md) as the required shape of the file.
+You are **promptsSpecialist**. Follow [`SYSTEM.md`](SYSTEM.md). Preserve the future-surviving package layout.
 
-## Your task
+## Task
 
-Update an agent that already lives in the agents root, then **overwrite** that file.
-
-```text
-agents/<agentName>.md
-```
+Update `agents/<agent_id>/` in place.
 
 ## Steps
 
-1. Require `agentName` (or a path under `/agents`) and a change request. If either is missing, ask — then continue.
-2. Read the current `agents/<agentName>.md`. If it does not exist, stop and tell the user to run `write-agent.md` instead.
-3. Apply the change request. Preserve the agent’s name unless the user explicitly renamed it.
-4. If the user renamed the agent, write `agents/<newName>.md`, delete `agents/<oldName>.md` only when the new file is in place, and keep camelCase names.
-5. Re-validate: YAML front matter, Identity, Scope, Inputs, Process, Outputs, Done when, Refusals. No empty sections.
-6. **Write** the file to `/agents`. Do not only print a diff in chat.
-7. Reply with the path, what changed, and what stayed the same.
+1. Require `agent_id` and a change request.
+2. If the directory is missing, stop and use `write-agent.md`.
+3. Read `manifest.yaml` and the current contracts/graph/nodes.
+4. Apply the change. Do not delete required layers. Do not move platform concerns into the agent.
+5. If renaming, write `agents/<new_id>/` completely, then delete `agents/<old_id>/`.
+6. Bump `manifest.yaml` version when contracts, graph, prompts, or capability ports change. Call out RuntimeBundle pins that in-flight runs must keep.
+7. Write files. Reply with path, version bump, what changed, what stayed.
 
 ## User brief
 
-<!-- Paste agentName + change request below this line. -->
+<!-- Paste agent_id + change request below this line. -->
