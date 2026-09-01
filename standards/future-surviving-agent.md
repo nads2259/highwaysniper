@@ -241,4 +241,4 @@ await AgentType(ports=...).spawn().execute(task)
 ```
 
 Engineering rules (SOLID ports, functional nodes, typed failures): [`engineering.md`](engineering.md).  
-What is implemented vs still platform-owned: [`coverage.md`](coverage.md).
+Coverage (0% gaps vs this spec): [`coverage.md`](coverage.md).

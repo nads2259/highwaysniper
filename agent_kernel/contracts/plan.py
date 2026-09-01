@@ -11,6 +11,11 @@ class PlanStep(BaseModel):
     validator: str
     retry_class: str = "safe"
     estimated_cost: float = 0.0
+    fallback_id: str | None = None
+    compensation_capability: str | None = None
+    side_effect_class: str = "none"
+    approval_required: bool = False
+    bounded: bool = True
 
 
 class Plan(BaseModel):
@@ -21,6 +26,9 @@ class Plan(BaseModel):
 
     def step_ids(self) -> set[str]:
         return {step.id for step in self.steps}
+
+    def by_id(self) -> dict[str, PlanStep]:
+        return {step.id: step for step in self.steps}
 
     def is_acyclic(self) -> bool:
         ids = self.step_ids()
@@ -41,3 +49,14 @@ class Plan(BaseModel):
                     if not incoming[step.id]:
                         ready.append(step.id)
         return seen == len(ids)
+
+    def ready_steps(self, completed: set[str]) -> list[PlanStep]:
+        return [
+            step
+            for step in self.steps
+            if step.id not in completed and set(step.dependencies) <= completed
+        ]
+
+    def independent_branches(self) -> list[list[str]]:
+        roots = [s.id for s in self.steps if not s.dependencies]
+        return [[r] for r in roots]

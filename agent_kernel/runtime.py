@@ -2,122 +2,53 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from typing import Any, Awaitable, Callable, Protocol
+from hashlib import sha256
+from typing import Any, Awaitable, Callable
 from uuid import uuid4
 
-from agent_kernel.contracts.plan import Plan, PlanStep
+from agent_kernel.contracts.memory import CheckpointRecord
 from agent_kernel.contracts.result import AgentResult
 from agent_kernel.contracts.task import AgentTaskContract
-from agent_kernel.errors import InvalidInputError, NonConvergingPlanError
+from agent_kernel.errors import NonConvergingPlanError
 from agent_kernel.lifecycle import Lifecycle, TerminalStatus, assert_transition
+from agent_kernel.nodes_default import KernelNodes
 from agent_kernel.state import AgentState
+from agent_os import AgentOS
 
 NodeFn = Callable[[AgentState], Awaitable[dict[str, Any]]]
 
 
-class NodeSet(Protocol):
-    async def intake(self, state: AgentState) -> dict[str, Any]: ...
-
-    async def goal_builder(self, state: AgentState) -> dict[str, Any]: ...
-
-    async def planner(self, state: AgentState) -> dict[str, Any]: ...
-
-    async def plan_validator(self, state: AgentState) -> dict[str, Any]: ...
-
-    async def executor(self, state: AgentState) -> dict[str, Any]: ...
-
-    async def step_validator(self, state: AgentState) -> dict[str, Any]: ...
-
-    async def goal_validator(self, state: AgentState) -> dict[str, Any]: ...
-
-    async def finalizer(self, state: AgentState) -> dict[str, Any]: ...
-
-
-def _now() -> datetime:
-    return datetime.now(timezone.utc)
-
-
-class HappyPathNodes:
-    """Deterministic test/default nodes. Domain agents replace these."""
-
-    async def intake(self, state: AgentState) -> dict[str, Any]:
-        if state.task is None:
-            raise InvalidInputError("AgentTaskContract required")
-        return {"lifecycle": Lifecycle.CONTRACTED}
-
-    async def goal_builder(self, state: AgentState) -> dict[str, Any]:
-        assert state.task is not None
-        if not state.task.goal.success_criteria:
-            raise InvalidInputError("success_criteria required")
-        return {"lifecycle": Lifecycle.PLANNING}
-
-    async def planner(self, state: AgentState) -> dict[str, Any]:
-        assert state.task is not None
-        criteria = state.task.goal.success_criteria
-        steps = [
-            PlanStep(
-                id=f"step_{i}",
-                objective=c,
-                capability="domain",
-                validator="goal",
-            )
-            for i, c in enumerate(criteria, start=1)
-        ]
-        plan = Plan(
-            plan_id=str(uuid4()),
-            version=1,
-            goal_coverage={c: [s.id] for c, s in zip(criteria, steps, strict=True)},
-            steps=steps,
-        )
-        return {"plan": plan, "lifecycle": Lifecycle.PLAN_VALIDATION}
-
-    async def plan_validator(self, state: AgentState) -> dict[str, Any]:
-        if state.plan is None or not state.plan.is_acyclic():
-            return {"lifecycle": Lifecycle.PLANNING}
-        return {"lifecycle": Lifecycle.EXECUTING}
-
-    async def executor(self, state: AgentState) -> dict[str, Any]:
-        results = {step.id: {"ok": True} for step in (state.plan.steps if state.plan else [])}
-        return {"step_results": results, "lifecycle": Lifecycle.STEP_VALIDATION}
-
-    async def step_validator(self, state: AgentState) -> dict[str, Any]:
-        return {"lifecycle": Lifecycle.GOAL_VALIDATION}
-
-    async def goal_validator(self, state: AgentState) -> dict[str, Any]:
-        return {"lifecycle": Lifecycle.COMPLETED}
-
-    async def finalizer(self, state: AgentState) -> dict[str, Any]:
-        return {
-            "result": AgentResult(status=TerminalStatus.SUCCEEDED, goal_satisfied=True),
-        }
-
-
 @dataclass
 class Agent:
-    """Reusable agent *type*. Holds ports and node implementations — not run state.
+    """Reusable agent type. No per-run mutable state.
 
-    100 concurrent executions: call ``spawn()`` 100 times (100 instances).
+    100 concurrent executions: 100 ``spawn()`` instances (or 100 ``Agent()`` constructions).
     """
 
     name: str
-    nodes: NodeSet = field(default_factory=HappyPathNodes)
+    os: AgentOS = field(default_factory=AgentOS)
+    nodes: Any = None
     ports: dict[str, Any] = field(default_factory=dict)
 
+    def __post_init__(self) -> None:
+        if self.nodes is None:
+            self.nodes = KernelNodes(self.os)
+
     def spawn(self) -> AgentRun:
-        return AgentRun(name=self.name, nodes=self.nodes, ports=self.ports)
+        return AgentRun(name=self.name, nodes=self.nodes, ports=self.ports, os=self.os)
 
     async def execute(self, task: AgentTaskContract) -> AgentResult:
-        """Always runs on a fresh instance. Safe to call concurrently on one Agent type."""
         return await self.spawn().execute(task)
 
 
 @dataclass
 class AgentRun:
-    """One isolated execution. Do not reuse across tasks."""
+    """One isolated async execution. Do not reuse across tasks."""
 
     name: str
-    nodes: NodeSet
+    nodes: Any
     ports: dict[str, Any]
+    os: AgentOS
     run_id: str = field(default_factory=lambda: str(uuid4()))
     state: AgentState = field(default_factory=AgentState)
 
@@ -127,29 +58,67 @@ class AgentRun:
             assert_transition(current, nxt)
         self.state = self.state.model_copy(update=updates)
 
+    async def _checkpoint(self) -> None:
+        if not self.state.task:
+            return
+        digest = sha256(self.state.model_dump_json().encode()).hexdigest()
+        record = CheckpointRecord(
+            task_id=self.state.task.task_id,
+            lifecycle=self.state.lifecycle,
+            at=datetime.now(timezone.utc),
+            payload_digest=digest,
+        )
+        if self.os.checkpoints:
+            await self.os.checkpoints.save(record)
+        await self.os.ledger.append(
+            {"kind": "transition", "run_id": self.run_id, "lifecycle": self.state.lifecycle.value}
+        )
+
     async def execute(self, task: AgentTaskContract) -> AgentResult:
+        self.os.quotas.enter()
+        try:
+            return await self._execute(task)
+        finally:
+            self.os.quotas.leave()
+
+    async def _execute(self, task: AgentTaskContract) -> AgentResult:
         self.state = AgentState(task=task, lifecycle=Lifecycle.RECEIVED)
-        sequence: list[tuple[Lifecycle, Callable[[AgentState], Awaitable[dict[str, Any]]]]] = [
-            (Lifecycle.RECEIVED, self.nodes.intake),
-            (Lifecycle.CONTRACTED, self.nodes.goal_builder),
-            (Lifecycle.PLANNING, self.nodes.planner),
-            (Lifecycle.PLAN_VALIDATION, self.nodes.plan_validator),
-            (Lifecycle.EXECUTING, self.nodes.executor),
-            (Lifecycle.STEP_VALIDATION, self.nodes.step_validator),
-            (Lifecycle.GOAL_VALIDATION, self.nodes.goal_validator),
-        ]
-        steps = 0
-        for expected, node in sequence:
-            if self.state.lifecycle != expected:
-                raise NonConvergingPlanError(
-                    f"{self.name} run {self.run_id} expected {expected}, got {self.state.lifecycle}"
+        handlers: dict[Lifecycle, NodeFn] = {
+            Lifecycle.RECEIVED: self.nodes.intake,
+            Lifecycle.CONTRACTED: self.nodes.goal_builder,
+            Lifecycle.PLANNING: self.nodes.planner,
+            Lifecycle.PLAN_VALIDATION: self.nodes.plan_validator,
+            Lifecycle.EXECUTING: self.nodes.executor,
+            Lifecycle.STEP_VALIDATION: self.nodes.step_validator,
+            Lifecycle.REPLANNING: self.nodes.replanner,
+            Lifecycle.GOAL_VALIDATION: self.nodes.goal_validator,
+            Lifecycle.ESCALATED: self._pause,
+        }
+        await self._checkpoint()
+        for _ in range(64):
+            self.os.kill_switch.assert_alive()
+            if self.state.cancelled:
+                self.state = self.state.model_copy(
+                    update={
+                        "lifecycle": Lifecycle.COMPLETED,
+                        "result": AgentResult(status=TerminalStatus.CANCELLED, goal_satisfied=False),
+                    }
                 )
-            self._apply(self.state.lifecycle, await node(self.state))
-            steps += 1
-            limit = task.constraints.max_steps
-            if limit is not None and steps > limit:
                 break
-        self._apply(self.state.lifecycle, await self.nodes.finalizer(self.state))
+            if self.state.lifecycle is Lifecycle.COMPLETED:
+                break
+            if self.state.replan_count > self.state.max_replans:
+                raise NonConvergingPlanError("non-converging plan")
+            handler = handlers.get(self.state.lifecycle)
+            if handler is None:
+                raise NonConvergingPlanError(f"no handler for {self.state.lifecycle}")
+            self._apply(self.state.lifecycle, await handler(self.state))
+            await self._checkpoint()
+        else:
+            raise NonConvergingPlanError("transition budget exhausted")
+        fin = await self.nodes.finalizer(self.state)
+        if "result" in fin:
+            self.state = self.state.model_copy(update={"result": fin["result"]})
         if self.state.result is None:
             self.state = self.state.model_copy(
                 update={
@@ -160,3 +129,9 @@ class AgentRun:
                 }
             )
         return self.state.result
+
+    async def _pause(self, state: AgentState) -> dict[str, Any]:
+        return {
+            "lifecycle": Lifecycle.COMPLETED,
+            "result": AgentResult(status=TerminalStatus.APPROVAL_REQUIRED, goal_satisfied=False),
+        }

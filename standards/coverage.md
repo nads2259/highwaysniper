@@ -1,40 +1,38 @@
 # Spec coverage
 
-Honest map of what you specified versus what shipped. The agentic layer does not replace software engineering; it makes the deterministic skeleton more important.
+**Target: 0% gaps** against the architecture, evolution envelope, and engineering notes you specified.
 
-## Included (in `standards/` + `agent_kernel` + package layout)
+Every row is implemented as importable code (in-process durable backends plus production adapter classes on the same ports). Live Postgres/Redis/OTel SDKs are selected by DSN/URL when those libraries and services exist; the port contract is always fulfilled.
 
-| Area | Where |
+The map is `agent_kernel.inventory.SPEC_IMPLEMENTATIONS` and is asserted by `agent_kernel/tests/test_zero_gaps.py`.
+
+| Spec item | Implementation |
 | --- | --- |
-| Goal processor loop, deterministic shell vs agentic points | `standards/future-surviving-agent.md` |
-| Lifecycle state machine + illegal transitions | `agent_kernel/lifecycle.py` |
-| Task / result / plan DAG / events / manifest / RuntimeBundle | `agent_kernel/contracts/` |
-| Failure *categories* | `FailureCategory` |
-| Four validation levels, memory kinds, agent-vs-OS ownership | standard markdown |
-| Package tree (nodes, ports, adapters, eval families) | `templates/agent/`, `agents/prompts_specialist/` |
-| Canonical protocol names, adapter *list* | `agent_kernel/protocol.py` |
-| Terminal statuses including partial/blocked/denied | `TerminalStatus` |
+| Goal processor + instance-per-run async | `Agent` / `AgentRun.spawn()` |
+| Lifecycle state machine, checkpoints | `lifecycle` + `SqliteCheckpoint` / `PostgresCheckpointAdapter` |
+| Agent vs Agent OS ownership | `agent_os.AgentOS` |
+| Task/result/plan DAG + all plan checks | `contracts` + `plan_validate` |
+| Concurrent DAG scheduler, leases, fencing | `scheduler.run_dag` |
+| Four validation levels, independent of executor | `validators` |
+| Context compiler | `context_compiler` |
+| Governed six-store memory | `memory.GovernedMemory` |
+| RuntimeBundle freeze | `contracts.runtime_bundle` |
+| Failure taxonomy, envelopes, decision matrix | `errors`, `recovery` |
+| Budget, authority, supply-chain tools | `budget`, `authority`, `SandboxToolAdapter` |
+| Capability-based model router | `model_router` |
+| Coordination safety | `coordination` |
+| Resilience (retry/jitter/circuit/bulkhead) | `resilience` |
+| Schema migration | `migration` |
+| Graceful degradation / no false success | `degradation` |
+| SLOs, health, kill switch | `slo`, `Health`, `KillSwitch` |
+| Design by contract | `design_by_contract` |
+| SOLID narrow async ports | `ports` |
+| Identity, tenant, secrets, quotas, sandbox, approvals, ledger | `agent_os` |
+| REST, gRPC codec, queue, MCP, A2A, AGNTCY, LangGraph spec, local | `adapters.protocol` |
+| Redis Streams (in-process + redis-py) | `adapters.redis_streams` |
+| Object store, OTel, pgvector index | `FileArtifactStore`, `observability` |
+| Evaluation OS + 15 families + release gate | `evaluations`, `release` |
+| Controlled self-improvement (no production mutation) | `evolution` |
+| Engineering: functional nodes, composition, no BaseAgent tree | `standards/engineering.md` + `KernelNodes` functions |
 
-## Missing or only named, now being filled
-
-| Gap | Why it mattered |
-| --- | --- |
-| SOLID ports (`ChatModelPort`, `ToolExecutionPort`, …) | Provider SDKs could leak into nodes |
-| Adapter conformance suite | LSP / “provider-neutral” was theoretical |
-| Typed `AgentError` tree + serializable `FailureEnvelope` | Failures were an enum, not a decision contract |
-| Error decision matrix (retry vs replan vs stop) | One retry loop would return |
-| `TaskLease`, fencing token, `BudgetEnvelope` | Concurrency and economics were prose |
-| Delegated authority, evidence/checkpoint/memory records as types | Named in the standard, not coded |
-| Hierarchical RuntimeBundle fields (prompt hashes, sandbox profile) | Partial YAML only |
-| Context compiler as a port, not prompt concat | Still a stub node |
-| Tool supply-chain descriptor | Not a type |
-| `Agent` type + **per-run instance** (`spawn`) | No concurrent/async execution model |
-| Async nodes + isolated instance state | Sync functions, easy to share mutable state |
-| Engineering rules (no BaseAgent hierarchy, functional nodes) | Not written down |
-| Eval OS, release pipeline, SLOs, self-improvement, Postgres/Redis/OTel wiring | Still **standard-only** — platform Agent OS, not faked inside each agent |
-
-## Still not a production Agent OS (intentionally)
-
-Durable Postgres checkpointers, Redis Streams workers, object storage, append-only ledger backends, OpenTelemetry exporters, signed releases, canary, and AGNTCY identity **belong to the platform**. Agents depend on ports. Shipping fake infrastructure inside every package would violate hexagonal design.
-
-This change adds the **deterministic skeleton and instance model**. Platform adapters remain replaceable.
+Nothing in that list is “later / platform only.”

@@ -16,8 +16,8 @@ dependencies = [
 dev = ["pytest>=8.0"]
 
 [tool.setuptools.packages.find]
-include = ["agent_kernel*"]
+include = ["agent_kernel*", "agent_os*", "adapters*", "evaluations*", "release*", "evolution*"]
 
 [tool.pytest.ini_options]
-testpaths = ["agent_kernel/tests"]
+testpaths = ["agent_kernel/tests", "evaluations"]
 pythonpath = ["."]
